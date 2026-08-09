@@ -1,0 +1,34 @@
+- generic [ref=f2e3]:
+  - complementary [ref=f2e4]:
+    - generic [ref=f2e5]: Sentry
+    - navigation [ref=f2e9]:
+      - link "Approval Queue" [ref=f2e10] [cursor=pointer]:
+        - /url: /approval-queue
+      - link "Audit Log" [ref=f2e14] [cursor=pointer]:
+        - /url: /audit-log
+      - link "Agents" [ref=f2e17] [cursor=pointer]:
+        - /url: /agents
+      - generic [ref=f2e23]:
+        - paragraph [ref=f2e24]: Builder
+        - link "Agents" [ref=f2e25] [cursor=pointer]:
+          - /url: /builder/agents
+        - link "Tools" [ref=f2e29] [cursor=pointer]:
+          - /url: /builder/tools
+        - link "Data Sources" [ref=f2e32] [cursor=pointer]:
+          - /url: /builder/data-sources
+    - button "Reset demo data" [ref=f2e38] [cursor=pointer]
+  - main [ref=f2e39]:
+    - generic [ref=f2e40]:
+      - navigation [ref=f2e41]:
+        - generic [ref=f2e42]: Builder
+        - generic [ref=f2e43]: /
+        - generic [ref=f2e44]: Tools
+      - generic [ref=f2e45]:
+        - generic [ref=f2e46]:
+          - heading "Tools" [level=1] [ref=f2e47]
+          - paragraph [ref=f2e48]: Register REST APIs and Bright Data queries for your agents
+        - button "+ Register New Tool" [ref=f2e49] [cursor=pointer]
+      - generic [ref=f2e50]:
+        - heading "No tools registered" [level=3] [ref=f2e53]
+        - paragraph [ref=f2e54]: No tools registered. Add a tool to use in your agents.
+        - button "Register Your First Tool" [ref=f2e55]

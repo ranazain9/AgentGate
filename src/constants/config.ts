@@ -1,0 +1,3 @@
+// Public Supabase config — these are safe to expose in client code
+export const SUPABASE_URL = 'https://ysacunhmuyehjordjdbl.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzYWN1bmhtdXllaGpvcmRqZGJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxOTkxNzAsImV4cCI6MjEwMTc3NTE3MH0.AOyMd_HLmpcYeUMJrWPL0mwrtnDuXsg4evphClLKvO4';

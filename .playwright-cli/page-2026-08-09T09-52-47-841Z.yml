@@ -1,0 +1,26 @@
+- generic [ref=f2e3]:
+  - complementary [ref=f2e4]:
+    - generic [ref=f2e5]: Sentry
+    - navigation [ref=f2e9]:
+      - link "Approval Queue" [ref=f2e10] [cursor=pointer]:
+        - /url: /approval-queue
+      - link "Audit Log" [ref=f2e14] [cursor=pointer]:
+        - /url: /audit-log
+      - link "Agents" [ref=f2e17] [cursor=pointer]:
+        - /url: /agents
+      - generic [ref=f2e23]:
+        - paragraph [ref=f2e24]: Builder
+        - link "Agents" [ref=f2e25] [cursor=pointer]:
+          - /url: /builder/agents
+        - link "Tools" [ref=f2e29] [cursor=pointer]:
+          - /url: /builder/tools
+        - link "Data Sources" [ref=f2e32] [cursor=pointer]:
+          - /url: /builder/data-sources
+    - button "Reset demo data" [ref=f2e38] [cursor=pointer]
+  - main [ref=f2e39]:
+    - generic [ref=f2e40]:
+      - generic [ref=f2e41]:
+        - heading "Agents" [level=1] [ref=f2e42]
+        - button "Add Agent" [ref=f2e43] [cursor=pointer]
+      - paragraph [ref=f2e46]: No agents registered. Add an agent to get started.
+      - generic [ref=f2e47]: Approved actions +10 • Rejected actions -15

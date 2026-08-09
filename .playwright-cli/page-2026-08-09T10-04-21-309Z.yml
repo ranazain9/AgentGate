@@ -1,0 +1,23 @@
+- generic [ref=f3e3]:
+  - complementary [ref=f3e4]:
+    - generic [ref=f3e5]: Sentry
+    - navigation [ref=f3e9]:
+      - link "Approval Queue" [ref=f3e10] [cursor=pointer]:
+        - /url: /approval-queue
+      - link "Audit Log" [ref=f3e14] [cursor=pointer]:
+        - /url: /audit-log
+      - link "Agents" [ref=f3e17] [cursor=pointer]:
+        - /url: /agents
+      - generic [ref=f3e23]:
+        - paragraph [ref=f3e24]: Builder
+        - link "Agents" [ref=f3e25] [cursor=pointer]:
+          - /url: /builder/agents
+        - link "Tools" [ref=f3e29] [cursor=pointer]:
+          - /url: /builder/tools
+        - link "Data Sources" [ref=f3e32] [cursor=pointer]:
+          - /url: /builder/data-sources
+    - button "Reset demo data" [ref=f3e38] [cursor=pointer]
+  - main [ref=f3e39]:
+    - generic [ref=f3e40]:
+      - heading "Audit Log" [level=1] [ref=f3e41]
+      - paragraph [ref=f3e43]: No decisions have been made yet. Approve or reject a proposal to see it here.

@@ -1,0 +1,23 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]: Sentry
+    - navigation [ref=e9]:
+      - link "Approval Queue" [ref=e10] [cursor=pointer]:
+        - /url: /approval-queue
+      - link "Audit Log" [ref=e14] [cursor=pointer]:
+        - /url: /audit-log
+      - link "Agents" [ref=e17] [cursor=pointer]:
+        - /url: /agents
+      - generic [ref=e23]:
+        - paragraph [ref=e24]: Builder
+        - link "Agents" [ref=e25] [cursor=pointer]:
+          - /url: /builder/agents
+        - link "Tools" [ref=e29] [cursor=pointer]:
+          - /url: /builder/tools
+        - link "Data Sources" [ref=e32] [cursor=pointer]:
+          - /url: /builder/data-sources
+    - button "Reset demo data" [ref=e38] [cursor=pointer]
+  - main [ref=e39]:
+    - generic [ref=e40]:
+      - heading "Approval Queue" [level=1] [ref=e41]
+      - paragraph [ref=e43]: No pending proposals. Click an agent button above to generate a new proposal.

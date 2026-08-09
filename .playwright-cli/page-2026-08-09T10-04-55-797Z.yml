@@ -1,0 +1,34 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]: Sentry
+    - navigation [ref=e9]:
+      - link "Approval Queue" [ref=e10] [cursor=pointer]:
+        - /url: /approval-queue
+      - link "Audit Log" [ref=e14] [cursor=pointer]:
+        - /url: /audit-log
+      - link "Agents" [ref=e17] [cursor=pointer]:
+        - /url: /agents
+      - generic [ref=e23]:
+        - paragraph [ref=e24]: Builder
+        - link "Agents" [ref=e25] [cursor=pointer]:
+          - /url: /builder/agents
+        - link "Tools" [ref=e29] [cursor=pointer]:
+          - /url: /builder/tools
+        - link "Data Sources" [ref=e32] [cursor=pointer]:
+          - /url: /builder/data-sources
+    - button "Reset demo data" [ref=e38] [cursor=pointer]
+  - main [ref=e39]:
+    - generic [ref=e40]:
+      - navigation [ref=e41]:
+        - generic [ref=e42]: Builder
+        - generic [ref=e43]: /
+        - generic [ref=e44]: Agents
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Agents" [level=1] [ref=e47]
+          - paragraph [ref=e48]: Manage your agent configurations
+        - button "Create Agent" [ref=e49] [cursor=pointer]
+      - generic [ref=e51]:
+        - heading "No agents yet" [level=3] [ref=e55]
+        - paragraph [ref=e56]: No agent configurations yet. Create your first agent to get started.
+        - button "Create Your First Agent" [ref=e57]

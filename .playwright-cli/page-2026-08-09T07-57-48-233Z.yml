@@ -1,0 +1,50 @@
+- generic [ref=f1e3]:
+  - complementary [ref=f1e4]:
+    - generic [ref=f1e5]: Sentry
+    - navigation [ref=f1e9]:
+      - link "Approval Queue" [ref=f1e10] [cursor=pointer]:
+        - /url: /approval-queue
+      - link "Audit Log" [ref=f1e14] [cursor=pointer]:
+        - /url: /audit-log
+      - link "Agents" [ref=f1e17] [cursor=pointer]:
+        - /url: /agents
+      - generic [ref=f1e23]:
+        - paragraph [ref=f1e24]: Builder
+        - link "Agents" [ref=f1e25] [cursor=pointer]:
+          - /url: /builder/agents
+        - link "Tools" [ref=f1e29] [cursor=pointer]:
+          - /url: /builder/tools
+        - link "Data Sources" [ref=f1e32] [cursor=pointer]:
+          - /url: /builder/data-sources
+    - button "Reset demo data" [ref=f1e38] [cursor=pointer]
+  - main [ref=f1e39]:
+    - generic [ref=f1e40]:
+      - generic [ref=f1e41]:
+        - heading "Agents" [level=1] [ref=f1e42]
+        - button "Add Agent" [ref=f1e43] [cursor=pointer]
+      - generic [ref=f1e45]:
+        - generic [ref=f1e46]:
+          - generic [ref=f1e47]:
+            - generic [ref=f1e48]:
+              - heading "Finance Agent" [level=3] [ref=f1e49]
+              - text: Built-in agent
+            - generic [ref=f1e50]:
+              - text: Session requests
+              - paragraph [ref=f1e51]: "0"
+          - paragraph [ref=f1e52]: Requires approval for any transaction over $500 — refunds, vendor payments, and reimbursements
+          - generic [ref=f1e53]:
+            - generic [ref=f1e54]: Trust
+            - generic [ref=f1e55]: "50"
+        - generic [ref=f1e57]:
+          - generic [ref=f1e58]:
+            - generic [ref=f1e59]:
+              - heading "HR Agent" [level=3] [ref=f1e60]
+              - text: Built-in agent
+            - generic [ref=f1e61]:
+              - text: Session requests
+              - paragraph [ref=f1e62]: "0"
+          - paragraph [ref=f1e63]: Requires approval for all personnel changes — new hires, terminations, salary adjustments
+          - generic [ref=f1e64]:
+            - generic [ref=f1e65]: Trust
+            - generic [ref=f1e66]: "50"
+      - generic [ref=f1e68]: Approved actions +10 • Rejected actions -15
