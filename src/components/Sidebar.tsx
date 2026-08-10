@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, ClipboardList, Users, Activity, AlertTriangle, Code, Wrench, Database } from 'lucide-react';
-import { useSentry } from '../context/SentryContext';
+import { Shield, ClipboardList, Users, Activity, Code, Wrench, Database, LayoutDashboard, Home, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const navItems = [
+  { to: '/', label: 'Home Page', icon: Home },
+  { to: '/dashboard', label: 'Command Center', icon: LayoutDashboard },
   { to: '/approval-queue', label: 'Approval Queue', icon: ClipboardList },
   { to: '/audit-log', label: 'Audit Log', icon: Activity },
   { to: '/agents', label: 'Agents', icon: Users },
@@ -18,113 +20,145 @@ const builderItems = [
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { resetDemoData } = useSentry();
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  function handleReset() {
-    resetDemoData();
-    setShowResetConfirm(false);
-    navigate('/approval-queue');
-  }
+  const renderNavItem = (item: { to: string; label: string; icon: any }, isBuilder = false) => {
+    // For builder items, we want to match sub-paths too, except for the exact '/builder'
+    const isActive = isBuilder 
+      ? location.pathname.startsWith(item.to) 
+      : location.pathname === item.to;
+
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        onMouseEnter={() => setHoveredPath(item.to)}
+        onMouseLeave={() => setHoveredPath(null)}
+        className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer group ${isCollapsed ? 'justify-center px-0' : ''}`}
+        title={isCollapsed ? item.label : undefined}
+      >
+        {/* Animated Active/Hover Background Pill */}
+        {isActive && (
+          <motion.div
+            layoutId="sidebar-active-pill"
+            className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-xl"
+            initial={false}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          />
+        )}
+        
+        {hoveredPath === item.to && !isActive && (
+          <motion.div
+            layoutId="sidebar-hover-pill"
+            className="absolute inset-0 bg-white/5 rounded-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        )}
+
+        <div className="relative z-10 flex items-center justify-center w-6 h-6 shrink-0">
+          <item.icon className={`w-5 h-5 transition-colors duration-300 ${isActive ? 'text-primary' : 'text-muted group-hover:text-fg'}`} />
+        </div>
+        
+        {!isCollapsed && (
+          <span className={`relative z-10 whitespace-nowrap transition-colors duration-300 ${isActive ? 'text-primary' : 'text-muted group-hover:text-fg'}`}>
+            {item.label}
+          </span>
+        )}
+        
+        {isActive && !isCollapsed && (
+          <motion.div 
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative z-10 ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0"
+          />
+        )}
+      </NavLink>
+    );
+  };
 
   return (
-    <>
-      <aside className="w-60 min-h-screen border-r border-border flex flex-col shrink-0">
-        {/* App logo / name */}
-        <div className="flex items-center gap-2.5 px-5 py-6 border-b border-border">
-          <Shield className="w-6 h-6 text-primary" />
-          <span className="text-lg font-semibold tracking-tight text-fg">Sentry</span>
-        </div>
+    <motion.aside 
+      initial={false}
+      animate={{ width: isCollapsed ? 88 : 280 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="h-[calc(100vh-2rem)] sticky top-4 border-r border-white/5 glass-panel flex flex-col shrink-0 ml-4 mb-4 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] z-50"
+    >
+      {/* Subtle ambient glow behind sidebar */}
+      <div className="absolute top-0 left-0 w-full h-64 bg-primary/5 blur-[80px] pointer-events-none" />
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {/* Sentry section */}
-          {navItems.map(item => {
-            const isActive = location.pathname === item.to;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'bg-card text-primary border-l-2 border-primary pl-[10px]'
-                    : 'text-muted hover:text-fg hover:bg-card'
-                }`}
-              >
-                <item.icon className="w-4 h-4 shrink-0" />
-                {item.label}
-              </NavLink>
-            );
-          })}
-
-          {/* Divider */}
-          <div className="pt-4 pb-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted px-3 pb-1">
-              Builder
-            </p>
-            {builderItems.map(item => {
-              const isActive = location.pathname.startsWith(item.to);
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
-                    isActive
-                      ? 'bg-card text-primary border-l-2 border-primary pl-[10px]'
-                      : 'text-muted hover:text-fg hover:bg-card'
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 shrink-0" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* Footer area */}
-        <div className="px-5 py-4 border-t border-border">
-          <button
-            onClick={() => setShowResetConfirm(true)}
-            className="text-xs text-muted hover:text-destructive transition-colors cursor-pointer"
-          >
-            Reset demo data
-          </button>
-        </div>
-      </aside>
-
-      {/* Reset confirmation modal */}
-      {showResetConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowResetConfirm(false)}
+      {/* App logo / name & Toggle */}
+      <div className={`flex items-center ${isCollapsed ? 'justify-center flex-col gap-2' : 'justify-between'} px-4 py-8 border-b border-white/5`}>
+        <div 
+          onClick={() => navigate('/')}
+          className="flex items-center gap-3 cursor-pointer group"
+          title={isCollapsed ? "AgentGate" : undefined}
         >
-          <div
-            className="bg-card border border-border rounded-xl p-6 w-full max-w-sm mx-4 shadow-xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <AlertTriangle className="w-10 h-10 text-destructive mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-fg text-center mb-2">Reset All Data?</h3>
-            <p className="text-sm text-muted text-center mb-5">
-              This will clear all agents, audit logs, and trust scores. This cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="flex-1 px-4 py-2.5 border border-border text-muted rounded-lg hover:text-fg hover:bg-[#252525] transition-all duration-150 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReset}
-                className="flex-1 px-4 py-2.5 bg-destructive text-white font-medium rounded-lg hover:opacity-90 active:scale-[0.97] transition-all duration-150 cursor-pointer"
-              >
-                Reset
-              </button>
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform duration-300">
+            <Shield className="w-5 h-5 text-black" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tight text-fg leading-none">AgentGate</span>
+              <span className="text-[10px] uppercase tracking-widest text-primary font-semibold">Security Core</span>
             </div>
+          )}
+        </div>
+        
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={`p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-fg transition-colors ${isCollapsed ? 'mt-2' : ''}`}
+        >
+          <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`} />
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto custom-scrollbar overflow-x-hidden">
+        {navItems.map(item => renderNavItem(item, false))}
+
+        {/* Divider */}
+        <div className="pt-6 pb-2">
+          {!isCollapsed ? (
+            <div className="flex items-center gap-4 px-4 mb-2 whitespace-nowrap">
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted/60">
+                Builder Suite
+              </p>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            </div>
+          ) : (
+            <div className="flex justify-center mb-4">
+              <div className="w-8 h-[1px] bg-white/10" />
+            </div>
+          )}
+          <div className="space-y-2">
+            {builderItems.map(item => renderNavItem(item, true))}
           </div>
         </div>
-      )}
-    </>
+      </nav>
+
+      {/* User Profile Footer */}
+      <div className={`p-4 border-t border-white/5 bg-black/20 flex ${isCollapsed ? 'justify-center' : 'items-center gap-3'} transition-all`}>
+        <div 
+          className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-inner cursor-pointer hover:scale-105 transition-transform"
+          title={isCollapsed ? "Admin User" : undefined}
+        >
+          <span className="text-xs font-bold text-white">AD</span>
+        </div>
+        {!isCollapsed && (
+          <>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-sm font-medium text-fg truncate">Admin User</span>
+              <span className="text-[10px] text-muted truncate">admin@agentgate.io</span>
+            </div>
+            <ChevronRight className="w-4 h-4 shrink-0 text-muted group-hover:text-fg transition-colors cursor-pointer" />
+          </>
+        )}
+      </div>
+    </motion.aside>
   );
 }

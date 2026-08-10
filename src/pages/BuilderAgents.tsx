@@ -35,7 +35,7 @@ export default function BuilderAgents() {
       </div>
 
       {agentConfigs.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-12 text-center">
+        <div className="glass-panel rounded-2xl p-12 text-center">
           <Code size={40} className="mx-auto text-muted/40 mb-4" />
           <h3 className="text-base font-medium text-fg mb-2">No agents yet</h3>
           <p className="text-sm text-muted mb-6">

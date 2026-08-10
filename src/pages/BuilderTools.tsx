@@ -44,7 +44,7 @@ export default function BuilderTools() {
       </div>
 
       {state.tools.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-12 text-center">
+        <div className="glass-panel rounded-2xl p-12 text-center">
           <Wrench size={40} className="mx-auto text-muted/40 mb-4" />
           <h3 className="text-base font-medium text-fg mb-2">No tools registered</h3>
           <p className="text-sm text-muted mb-6">
@@ -94,7 +94,7 @@ export default function BuilderTools() {
                   </div>
                   <button
                     onClick={() => setConfirmDelete(tool.id)}
-                    className="shrink-0 text-muted hover:text-destructive transition-colors"
+                    className="shrink-0 text-muted hover:text-destructive transition-colors cursor-pointer"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -112,7 +112,7 @@ export default function BuilderTools() {
           onClick={() => setConfirmDelete(null)}
         >
           <div
-            className="bg-card border border-border rounded-xl p-6 w-full max-w-sm mx-4 shadow-xl"
+            className="glass-panel rounded-xl p-6 w-full max-w-sm mx-4 shadow-xl"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-base font-semibold text-fg mb-2">Delete Tool</h3>
@@ -122,7 +122,7 @@ export default function BuilderTools() {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 px-4 py-2 border border-border text-muted rounded-lg hover:text-fg hover:bg-card transition-all duration-150"
+                className="flex-1 px-4 py-2 border border-white/10 text-muted rounded-lg hover:text-fg hover:bg-white/5 transition-all duration-150 cursor-pointer"
               >
                 Cancel
               </button>
@@ -131,7 +131,7 @@ export default function BuilderTools() {
                   removeTool(confirmDelete);
                   setConfirmDelete(null);
                 }}
-                className="flex-1 px-4 py-2 bg-destructive text-white rounded-lg hover:opacity-90 transition-all duration-150"
+                className="flex-1 px-4 py-2 bg-destructive text-white rounded-lg hover:opacity-90 transition-all duration-150 cursor-pointer"
               >
                 Delete
               </button>

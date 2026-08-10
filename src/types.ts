@@ -6,6 +6,8 @@ export interface Agent {
   sessionRequestCount: number;
   isBuiltIn: boolean;
   mockApiKey?: string;
+  agentType?: 'WORKER' | 'SENTRY';
+  sentryId?: string;
 }
 
 export interface AuditEntry {
@@ -13,9 +15,11 @@ export interface AuditEntry {
   agentName: string;
   action: string;
   riskJustification: string;
-  decision: 'approved' | 'rejected';
+  decision: 'approved' | 'rejected' | 'escalated';
   note: string;
   timestamp: number;
+  sentryReasoning?: string;
+  confidenceScore?: number;
 }
 
 export interface ProposalCard {
@@ -24,6 +28,9 @@ export interface ProposalCard {
   action: string;
   riskJustification: string;
   timestamp: number;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ESCALATED';
+  sentryReasoning?: string;
+  confidenceScore?: number;
 }
 
 export interface ApprovalRule {
@@ -48,6 +55,8 @@ export interface AgentConfig {
     agentId: string;
     namespace?: string;
     owner?: string;
+    agentType?: 'WORKER' | 'SENTRY';
+    sentryId?: string;
   };
   spec: {
     goal: string;

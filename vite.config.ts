@@ -8,8 +8,4 @@ export default defineConfig(() => ({
     react(),
     tailwindcss(),
   ],
-  server: {
-    allowedHosts: true as const,
-    hmr: false,
-  },
 }))

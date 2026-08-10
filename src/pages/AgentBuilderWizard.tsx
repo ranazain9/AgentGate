@@ -46,6 +46,8 @@ export default function AgentBuilderWizard() {
         agentId: formState.agentId || 'unnamed-agent',
         namespace: formState.namespace || undefined,
         owner: formState.owner || undefined,
+        agentType: formState.agentType,
+        sentryId: formState.sentryId || undefined,
       },
       spec: {
         goal: formState.goal || 'No goal defined',
@@ -119,6 +121,8 @@ export default function AgentBuilderWizard() {
         agentId: formState.agentId || formState.name.trim().toLowerCase().replace(/\s+/g, '-'),
         namespace: formState.namespace.trim() || undefined,
         owner: formState.owner.trim() || undefined,
+        agentType: formState.agentType,
+        sentryId: formState.sentryId || undefined,
       },
       spec: {
         goal: formState.goal.trim(),

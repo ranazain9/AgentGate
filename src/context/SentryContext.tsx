@@ -62,10 +62,17 @@ interface ApprovalQueueRow {
 // ────────────────────────────────────────────
 
 function rowToAgent(row: AgentConfigRow): Agent {
-  const rules = (row.approval_rules ?? []) as Array<Record<string, unknown>>;
-  const rule = rules.length > 0
-    ? rules.map(r => String(r.reason ?? `${r.type}: ${r.limit ?? ''}`)).join('; ')
-    : (row.description ?? row.goal);
+  const rules = (row.approval_rules ?? []) as Array<any>;
+  let rule = row.description ?? row.goal;
+  
+  if (rules.length > 0) {
+    const firstRule = rules[0];
+    if (firstRule.reason) {
+      rule = firstRule.reason;
+    } else if (firstRule.condition && firstRule.condition.field) {
+      rule = `Requires approval if ${firstRule.condition.field} ${firstRule.condition.operator} ${firstRule.condition.value}`;
+    }
+  }
   return {
     id: row.id,
     name: row.name,
@@ -138,11 +145,29 @@ function rowToTool(row: ToolRow): ToolDefinition {
   };
 }
 
+function formatRowAction(row: ApprovalQueueRow): string {
+  const args = row.tool_arguments as Record<string, any> | undefined;
+  if (args && args.full_action) {
+    return String(args.full_action);
+  }
+  
+  if (!args || Object.keys(args).length === 0) {
+    return row.tool_name ?? 'Unknown Action';
+  }
+  
+  // Format cleanly if there are arguments
+  const cleanArgs = Object.entries(args)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(', ');
+    
+  return `${row.tool_name} (${cleanArgs})`;
+}
+
 function rowToProposal(row: ApprovalQueueRow): ProposalCard {
   return {
     id: row.id,
     agentName: row.agent_name ?? 'Unknown Agent',
-    action: `${row.tool_name}(${JSON.stringify(row.tool_arguments)})`,
+    action: formatRowAction(row),
     riskJustification: row.risk_justification ?? '',
     timestamp: new Date(row.created_at).getTime(),
   };
@@ -152,7 +177,7 @@ function rowToAuditEntry(row: ApprovalQueueRow): AuditEntry {
   return {
     id: row.id,
     agentName: row.agent_name ?? 'Unknown Agent',
-    action: `${row.tool_name}(${JSON.stringify(row.tool_arguments)})`,
+    action: formatRowAction(row),
     riskJustification: row.risk_justification ?? '',
     decision: (row.status === 'approved' ? 'approved' : 'rejected') as 'approved' | 'rejected',
     note: row.reviewer_note ?? '',
@@ -175,9 +200,7 @@ interface SentryContextValue {
   adjustTrustScore: (agentId: string, delta: number) => void;
   incrementSessionCount: (agentId: string) => void;
   dismissBanner: (agentId: string) => void;
-  clearSessionData: () => void;
   addAgent: (agent: Agent) => void;
-  resetDemoData: () => void;
   addAgentConfig: (config: AgentConfig) => void;
   removeAgentConfig: (id: string) => void;
   addTool: (tool: ToolDefinition) => void;
@@ -185,6 +208,7 @@ interface SentryContextValue {
   addDataSource: (source: DataSource) => void;
   removeDataSource: (id: string) => void;
   getAgentConfigById: (id: string) => AgentConfig | undefined;
+  triggerSimulation: () => void;
 }
 
 const SentryContext = createContext<SentryContextValue | null>(null);
@@ -243,12 +267,18 @@ export function SentryProvider({ children }: { children: ReactNode }) {
         for (const r of resolvedRows) r.agent_name = r.agent_configs?.name ?? r.agent_name;
 
         setState({
-          agents: configRows.map(rowToAgent),
+          agents: [...configRows.map(rowToAgent)],
           auditLog: resolvedRows.map(rowToAuditEntry),
           dismissedBanners: [],
           agentConfigs: configRows.map(rowToAgentConfig),
           tools: toolRows.map(rowToTool),
-          dataSources: [],
+          dataSources: [
+            { id: 'ds_aws_cloudtrail', name: 'AWS CloudTrail', type: 's3', refreshPolicy: 'on_trigger', brightDataZone: 'us-east-1', allowedTables: ['cloudtrail_logs'] },
+            { id: 'ds_zendesk', name: 'Zendesk Tickets', type: 'postgresql', refreshPolicy: 'on_trigger', brightDataZone: 'zendesk-analytics', allowedTables: ['tickets', 'users', 'metrics'] },
+            { id: 'ds_stripe', name: 'Stripe Transactions', type: 'snowflake', refreshPolicy: 'hourly', brightDataZone: 'stripe-dw-prod', allowedTables: ['charges', 'refunds', 'disputes'] },
+            { id: 'ds_salesforce', name: 'Salesforce CRM', type: 'salesforce', refreshPolicy: 'hourly', brightDataZone: 'salesforce-replica', allowedTables: ['Account', 'Contact', 'Opportunity'] },
+            { id: 'ds_github', name: 'GitHub PRs', type: 'postgresql', refreshPolicy: 'on_trigger', brightDataZone: 'github-metadata-db', allowedTables: ['pull_requests', 'commits'] }
+          ],
         });
         setPendingProposals(pendingRows.map(rowToProposal));
       } catch (err) {
@@ -259,7 +289,40 @@ export function SentryProvider({ children }: { children: ReactNode }) {
     }
 
     load();
-    return () => { cancelled = true; };
+
+    // ── Realtime Subscription ──
+    const channel = supabase
+      .channel('approval_queue_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'approval_queue' },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && payload.new.status === 'pending') {
+            const newRow = payload.new as unknown as ApprovalQueueRow;
+            // Optimistically add it (Agent name might be missing if we don't join, but UI will still show the ID)
+            const newProposal = rowToProposal(newRow);
+            setPendingProposals(prev => [newProposal, ...prev.filter(p => p.id !== newProposal.id)]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedRow = payload.new as unknown as ApprovalQueueRow;
+            if (updatedRow.status === 'approved' || updatedRow.status === 'rejected') {
+              // Remove from queue and push to audit log
+              setPendingProposals(prev => prev.filter(p => p.id !== updatedRow.id));
+              setState(prev => {
+                const entry = rowToAuditEntry(updatedRow);
+                // Prevent duplicate audit entries
+                if (prev.auditLog.some(e => e.id === entry.id)) return prev;
+                return { ...prev, auditLog: [entry, ...prev.auditLog] };
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { 
+      cancelled = true; 
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // ── Mutations (local + Supabase) ──
@@ -325,18 +388,6 @@ export function SentryProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const resetDemoData = useCallback(() => {
-    setState({
-      agents: [],
-      auditLog: [],
-      dismissedBanners: [],
-      agentConfigs: [],
-      tools: [],
-      dataSources: [],
-    });
-    setPendingProposals([]);
-  }, []);
-
   // ── AgentConfig mutations ──
 
   const addAgentConfig = useCallback(async (config: AgentConfig) => {
@@ -351,6 +402,8 @@ export function SentryProvider({ children }: { children: ReactNode }) {
         trustScore: config.spec.governance.state === 'ACTIVE' ? 70 : config.spec.governance.state === 'PROBATION' ? 40 : 10,
         sessionRequestCount: 0,
         isBuiltIn: false,
+        agentType: config.metadata.agentType,
+        sentryId: config.metadata.sentryId,
       }],
     }));
 
@@ -423,17 +476,54 @@ export function SentryProvider({ children }: { children: ReactNode }) {
     return state.agentConfigs.find(c => c.id === id);
   }, [state.agentConfigs]);
 
+  const triggerSimulation = useCallback(() => {
+    const fakeProposals: ProposalCard[] = [
+      {
+        id: `sim-${Date.now()}-1`,
+        agentName: 'Finance Optimizer',
+        action: 'Transfer $1,000,000 to unrecognized wallet',
+        riskJustification: 'Unusual amount to external non-whitelisted address.',
+        timestamp: Date.now(),
+        status: 'ESCALATED',
+        sentryReasoning: 'Critical risk: Amount exceeds daily limit and destination is unknown.',
+        confidenceScore: 98,
+      },
+      {
+        id: `sim-${Date.now()}-2`,
+        agentName: 'Database Maintainer',
+        action: 'DROP TABLE users CASCADE',
+        riskJustification: 'Irreversible deletion of core authentication data.',
+        timestamp: Date.now() + 1000,
+        status: 'ESCALATED',
+        sentryReasoning: 'Catastrophic risk: Attempting to delete production user table.',
+        confidenceScore: 99,
+      },
+      {
+        id: `sim-${Date.now()}-3`,
+        agentName: 'Marketing Auto-Bot',
+        action: 'Email 500,000 users with subject "FREE MONEY"',
+        riskJustification: 'Mass email blast detected without human review step.',
+        timestamp: Date.now() + 2000,
+        status: 'ESCALATED',
+        sentryReasoning: 'High risk: Spam heuristic matched, potential brand damage.',
+        confidenceScore: 85,
+      }
+    ];
+
+    setPendingProposals(prev => [...fakeProposals, ...prev]);
+  }, []);
+
   return (
     <SentryContext.Provider
       value={{
         state, pendingProposals, loading, error,
         addProposal, removeProposal, addAuditEntry,
         adjustTrustScore, incrementSessionCount, dismissBanner,
-        clearSessionData, addAgent, resetDemoData,
+        clearSessionData, addAgent, 
         addAgentConfig, removeAgentConfig,
         addTool, removeTool,
         addDataSource, removeDataSource,
-        getAgentConfigById,
+        getAgentConfigById, triggerSimulation
       }}
     >
       {children}

@@ -44,6 +44,20 @@ export default function ProposalCardView({ proposal, onDecision }: Props) {
             <p className="text-xs text-muted font-medium mb-1">Risk Assessment</p>
             <p className="text-sm text-fg">{proposal.riskJustification}</p>
           </div>
+          
+          {proposal.sentryReasoning && (
+            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3 mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs text-indigo-400 font-medium">Sentry AI Evaluation</span>
+                {proposal.confidenceScore && (
+                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
+                    {proposal.confidenceScore}% Confidence
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-indigo-100">{proposal.sentryReasoning}</p>
+            </div>
+          )}
 
           {/* Note input */}
           {(showNoteInput || note) && (

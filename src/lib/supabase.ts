@@ -14,11 +14,6 @@ export async function getEdgeToken(): Promise<string> {
     return data.session.access_token;
   }
 
-  // No session — sign in anonymously
-  const { data: anonData, error } = await supabase.auth.signInAnonymously();
-  if (error) throw new Error(`Auth error: ${error.message}`);
-  if (!anonData.session?.access_token) {
-    throw new Error('No session after anonymous sign-in');
-  }
-  return anonData.session.access_token;
+  // Fallback to the public Anon Key so we don't require Authentication configuration
+  return SUPABASE_ANON_KEY;
 }

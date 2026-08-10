@@ -1,5 +1,5 @@
 import { SUPABASE_URL } from '../constants/config';
-import { getEdgeToken } from './supabase';
+import { supabase, getEdgeToken } from './supabase';
 
 const EDGE_URL = `${SUPABASE_URL}/functions/v1`;
 
@@ -7,28 +7,15 @@ async function callEdge(
   slug: string,
   body: unknown,
 ): Promise<unknown> {
-  const token = await getEdgeToken();
-  const res = await fetch(`${EDGE_URL}/${slug}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
+  const { data, error } = await supabase.functions.invoke(slug, {
+    body,
   });
 
-  if (!res.ok) {
-    let msg = `Edge function error (${res.status})`;
-    try {
-      const err = await res.json();
-      msg = err.error || msg;
-    } catch {
-      // ignore
-    }
-    throw new Error(msg);
+  if (error) {
+    throw error;
   }
-
-  return res.json();
+  
+  return data;
 }
 
 async function callEdgeGet(
@@ -41,6 +28,7 @@ async function callEdgeGet(
     method: 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
+      apikey: token,
     },
   });
 
@@ -151,4 +139,77 @@ export async function executeTool(params: {
     result: unknown;
     duration_ms: number;
   }>;
+}
+
+// --- Generate Proposal ---
+
+export async function generateProposal(params: { agentName: string }) {
+  return (await callEdge('generate-proposal', params)) as {
+    action: string;
+    riskJustification: string;
+  };
+}
+
+// --- Build Agent (AI Builder) ---
+
+export async function buildAgent(prompt: string) {
+  return (await callEdge('build-agent', { prompt })) as {
+    name: string;
+    description: string;
+    systemPrompt: string;
+    agentType: 'WORKER' | 'SENTRY';
+    provider: string;
+  };
+}
+
+// --- Sentry Orchestrator (Multi-Agent) ---
+
+export async function evaluateProposalStream(
+  params: { agentName: string; action: string; riskJustification: string },
+  onUpdate: (chunk: any) => void
+): Promise<any> {
+  const token = await getEdgeToken();
+  const res = await fetch(`${EDGE_URL}/sentry-orchestrator`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: token,
+    },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) throw new Error(`Edge function error (${res.status})`);
+  if (!res.body) throw new Error('No stream body');
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let finalResult = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunkStr = decoder.decode(value, { stream: true });
+    const lines = chunkStr.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const dataStr = line.slice(6);
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.type === 'update') {
+            onUpdate(data.chunk);
+            if (data.chunk?.resolver) {
+              finalResult = data.chunk.resolver;
+            }
+          } else if (data.type === 'error') {
+            throw new Error(data.error);
+          }
+        } catch (e) {
+          // parse error
+        }
+      }
+    }
+  }
+  return finalResult;
 }

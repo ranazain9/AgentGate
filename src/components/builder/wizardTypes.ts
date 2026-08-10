@@ -10,6 +10,8 @@ export interface WizardFormState {
   description: string;
   namespace: string;
   owner: string;
+  agentType: 'WORKER' | 'SENTRY';
+  sentryId: string;
   // Step 2: Tools
   selectedTools: string[];
   // Step 3: Data Sources
@@ -30,6 +32,8 @@ export function emptyWizardFormState(): WizardFormState {
     description: '',
     namespace: '',
     owner: '',
+    agentType: 'WORKER',
+    sentryId: '',
     selectedTools: [],
     selectedDataSources: [],
     governanceState: 'PROBATION',

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Plus, Key, UserPlus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Key, UserPlus, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import { useSentry } from '../context/SentryContext';
 import type { Agent } from '../types';
@@ -37,7 +39,8 @@ function TrustBar({ score }: { score: number }) {
 }
 
 export default function Agents() {
-  const { state, addAgent } = useSentry();
+  const { state, addAgentConfig } = useSentry();
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
   const [rule, setRule] = useState('');
@@ -54,17 +57,33 @@ export default function Agents() {
     }
 
     const mockKey = generateId();
-    const newAgent: Agent = {
-      id: `custom-${generateId()}`,
-      name: name.trim(),
-      rule: rule.trim(),
-      trustScore: 50,
-      sessionRequestCount: 0,
-      isBuiltIn: false,
-      mockApiKey: mockKey,
-    };
+    const newId = `custom-${generateId()}`;
+    
+    addAgentConfig({
+      id: newId,
+      metadata: {
+        name: name.trim(),
+        agentId: newId,
+        agentType: 'WORKER'
+      },
+      spec: {
+        goal: rule.trim(),
+        reasoning: { provider: 'openai', model: 'gpt-4o', temperature: 0.1, maxTokens: 1000 },
+        tools: [],
+        dataSources: [],
+        governance: {
+          state: 'ACTIVE',
+          approvalRules: [{
+            name: rule.trim(),
+            enabled: true,
+            condition: { field: 'action', operator: 'gte', value: '1' },
+            action: { type: 'REQUIRE_HUMAN_APPROVAL' }
+          }]
+        }
+      },
+      createdAt: Date.now()
+    });
 
-    addAgent(newAgent);
     setGeneratedKey(mockKey);
     setName('');
     setRule('');
@@ -78,53 +97,92 @@ export default function Agents() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-fg">Agents</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-black font-medium rounded-lg hover:bg-primary-hover active:scale-[0.97] transition-all duration-150 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add Agent
-        </button>
+    <div className="max-w-4xl mx-auto pb-12">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60 mb-2">Agents</h1>
+          <p className="text-muted">Manage your deployed autonomous workforce and their security configurations.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 text-fg font-medium rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Manual Add
+          </button>
+          <button
+            onClick={() => navigate('/builder/agents/new')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-black font-semibold rounded-xl hover:bg-primary-hover active:scale-[0.98] transition-all duration-200 shadow-[0_0_20px_rgba(32,201,151,0.2)] cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI Builder
+          </button>
+        </div>
       </div>
 
       {state.agents.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-muted text-sm">No agents registered. Add an agent to get started.</p>
-        </Card>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-16 rounded-[2rem] text-center">
+          <p className="text-muted">No agents registered. Add an agent to get started.</p>
+        </motion.div>
       ) : (
-        <div className="space-y-4">
-          {state.agents.map(agent => (
-            <Card key={agent.id}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-medium text-fg">{agent.name}</h3>
-                  {agent.isBuiltIn ? (
-                    <span className="text-xs text-muted">Built-in agent</span>
-                  ) : (
-                    <span className="text-xs text-primary">Custom agent</span>
-                  )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatePresence>
+            {state.agents.map((agent, index) => (
+              <motion.div
+                key={agent.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+              >
+                <div className="glass-panel p-6 rounded-2xl border border-white/5 h-full flex flex-col group hover:border-primary/20 transition-colors relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  <div className="flex items-start justify-between mb-4 relative z-10">
+                    <div>
+                      <h3 className="text-xl font-bold text-fg mb-1">{agent.name}</h3>
+                      <div className="flex items-center gap-2">
+                        {agent.isBuiltIn ? (
+                          <span className="text-[10px] uppercase tracking-widest text-muted font-semibold">Built-in</span>
+                        ) : (
+                          <span className="text-[10px] uppercase tracking-widest text-primary font-semibold">Custom</span>
+                        )}
+                        {agent.agentType === 'SENTRY' && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded uppercase font-bold">Sentry</span>
+                        )}
+                        {agent.agentType === 'WORKER' && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 rounded uppercase font-bold">Worker</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right glass-panel bg-black/20 px-3 py-1.5 rounded-lg border-white/5">
+                      <span className="text-[10px] uppercase tracking-widest text-muted block mb-0.5">Sessions</span>
+                      <p className="text-sm font-bold text-fg leading-none">{agent.sessionRequestCount}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 mb-6 relative z-10">
+                    <p className="text-sm text-muted/80 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+                      {agent.rule}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 relative z-10 pt-4 border-t border-white/5">
+                    <span className="text-[10px] uppercase tracking-widest text-muted font-bold w-12 shrink-0">Trust</span>
+                    <div className="flex-1">
+                      <TrustBar score={agent.trustScore} />
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-muted">Session requests</span>
-                  <p className="text-sm font-medium text-fg">{agent.sessionRequestCount}</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted mb-4">{agent.rule}</p>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted w-16 shrink-0">Trust</span>
-                <TrustBar score={agent.trustScore} />
-              </div>
-            </Card>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
       {/* Trust score legend */}
-      <div className="mt-6 text-xs text-muted text-center">
-        Approved actions <span className="text-success">+10</span> &bull; Rejected actions <span className="text-destructive">-15</span>
+      <div className="mt-8 text-[10px] font-semibold uppercase tracking-widest text-muted text-center glass-panel inline-block mx-auto px-6 py-2 rounded-full border-white/5">
+        Approved actions <span className="text-success">+10</span> <span className="mx-2 opacity-50">&bull;</span> Rejected actions <span className="text-destructive">-15</span>
       </div>
 
       {/* Add Agent Modal */}

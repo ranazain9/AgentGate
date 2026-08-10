@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { WizardFormState } from './wizardTypes';
 import { generateAgentIdFromName } from './wizardTypes';
+import { useSentry } from '../../context/SentryContext';
 
 interface BasicInfoStepProps {
   formState: WizardFormState;
@@ -29,6 +30,9 @@ export default function BasicInfoStep({ formState, onUpdate }: BasicInfoStepProp
     onUpdate({ agentId: value });
   }, [onUpdate]);
 
+  const { state } = useSentry();
+  const sentryAgents = state.agents.filter(a => a.agentType === 'SENTRY' || a.name.toLowerCase().includes('sentry'));
+
   return (
     <div className="space-y-5">
       {/* Agent Name */}
@@ -41,6 +45,36 @@ export default function BasicInfoStep({ formState, onUpdate }: BasicInfoStepProp
           placeholder="e.g. Vendor Invoice Processor"
           className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-fg placeholder:text-muted/50 focus:outline-none focus:border-primary/50 transition-colors"
         />
+      </div>
+
+      {/* Agent Type */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-muted mb-1.5">Agent Type</label>
+          <select
+            value={formState.agentType}
+            onChange={e => onUpdate({ agentType: e.target.value as 'WORKER' | 'SENTRY' })}
+            className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-fg focus:outline-none focus:border-primary/50 transition-colors"
+          >
+            <option value="WORKER">Worker (Proposes actions)</option>
+            <option value="SENTRY">Sentry (Reviews actions)</option>
+          </select>
+        </div>
+        {formState.agentType === 'WORKER' && (
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1.5">Assigned Sentry (Optional)</label>
+            <select
+              value={formState.sentryId}
+              onChange={e => onUpdate({ sentryId: e.target.value })}
+              className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-fg focus:outline-none focus:border-primary/50 transition-colors"
+            >
+              <option value="">None (Human Review)</option>
+              {sentryAgents.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Agent ID */}
