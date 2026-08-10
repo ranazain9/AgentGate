@@ -1,0 +1,16 @@
+# Python utilities (not part of the web app)
+demo_agent.py
+requirements.txt
+*.py
+
+# Supabase (deployed separately)
+supabase/
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# Dev tools
+.playwright/
+.playwright-cli/
